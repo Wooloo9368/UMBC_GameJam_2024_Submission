@@ -150,12 +150,21 @@ local ActionFunctions = {
 			WallRunData.Speed = hum.WalkSpeed
 		end,
 		["Stop"] = function()
+			WallRunData.Exclude[WallRunData.CurrentWall] = tick()
+			
 			bv.Parent = nil
 			bg.Parent = nil
 			
 			hum.AutoRotate = true
 			
 			plr:SetAttribute("CameraTilt",0)
+			
+			local bv = Instance.new("BodyVelocity")
+			bv.Velocity = (WallRunData.CurrentCast.Normal + hrp.CFrame.LookVector).Unit * 40
+			bv.Parent = hrp
+			bv.MaxForce = Vector3.new(25000,25000,25000)
+			bv.P = 25000
+			game.Debris:AddItem(bv,.1)
 		end,
 		["OnStep"] = function()
 			
@@ -170,9 +179,9 @@ local ActionFunctions = {
 				bg.CFrame = CFrame.new(Vector3.new(),ForceCrossVector)
 			end
 			
-			if data.direction == "left" then
+			if data and data.direction == "left" then
 				plr:SetAttribute("CameraTilt",15)
-			else
+			elseif data then
 				plr:SetAttribute("CameraTilt",-15)
 			end
 			
@@ -181,10 +190,14 @@ local ActionFunctions = {
 			WallRunData.Speed = bv.Velocity.Magnitude
 			
 			if result == false or bv.Velocity.Unit.Y < -.65 or hum:GetState() == Enum.HumanoidStateType.Running then
+				WallRunData.Exclude[WallRunData.CurrentWall] = tick()
+				
 				bv.Parent = nil
 				bg.Parent = nil
 
 				hum.AutoRotate = true
+				
+				plr:SetAttribute("CameraTilt",0)
 			end
 		end,
 		["Check"] = wallRunCheck
