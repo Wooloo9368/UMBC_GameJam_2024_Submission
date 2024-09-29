@@ -60,7 +60,30 @@ local WallRunData = {
 	["Speed"] = nil;
 	["left"] = hum:LoadAnimation(script.LeftWallrun);
 	["right"] = hum:LoadAnimation(script.RightWallrun);
+	["deach"] = hum:LoadAnimation(script.Walldetach);
 }
+
+local footsteps = require(game.ReplicatedStorage.FootstepModule)
+
+WallRunData.right:GetMarkerReachedSignal("Step"):Connect(function(foot)
+	local soundList = footsteps.MaterialMap[WallRunData.CurrentWall.Material]
+	local sound = Instance.new("Sound")
+	sound.Volume = .1
+	sound.SoundId = footsteps:GetRandomSound(soundList)
+	sound.Parent = hum.Parent.HumanoidRootPart
+	sound:Play()
+	game.Debris:AddItem(sound,.5)
+end)
+
+WallRunData.left:GetMarkerReachedSignal("Step"):Connect(function(foot)
+	local soundList = footsteps.MaterialMap[WallRunData.CurrentWall.Material]
+	local sound = Instance.new("Sound")
+	sound.Volume = .1
+	sound.SoundId = footsteps:GetRandomSound(soundList)
+	sound.Parent = hum.Parent.HumanoidRootPart
+	sound:Play()
+	game.Debris:AddItem(sound,.5)
+end)
 
 local GrappleData = {
 	["Activated"] = false;
@@ -129,6 +152,8 @@ part.CanCollide = false
 part.Parent = workspace
 part.Size = Vector3.new(.1,.1,5)
 
+local isrunning = false
+
 local ActionFunctions = {
 	["WallRun"] = {
 		["Data"] = WallRunData;
@@ -180,6 +205,13 @@ local ActionFunctions = {
 			bv.MaxForce = Vector3.new(25000,25000,25000)
 			bv.P = 25000
 			game.Debris:AddItem(bv,.1)
+			
+			local sfx = game.ReplicatedStorage.WallrunDetachsfx:Clone()
+			sfx.Parent = hrp
+			sfx:Play()
+			game.Debris:AddItem(sfx,.5)
+			
+			WallRunData.deach:Play()
 		end,
 		["OnStep"] = function()
 			
@@ -245,32 +277,36 @@ local ActionFunctions = {
 	};
 	["Run"] = {
 		["Start"] = function()
-			print(playerdata)
 			--RunTrack:Play()
 			
-			local runanimId = char.Animate.run.RunAnim.AnimationId 
-			local walkanimID = char.Animate.walk.WalkAnim.AnimationId
-			
-			char.Animate.walk.WalkAnim.AnimationId = runanimId
-			char.Animate.run.RunAnim.AnimationId = walkanimID
-			
-			char.Animate.ResetAnimations:Fire("walk")
-			
-			hum.WalkSpeed = playerdata.Runspeed
-			workspace.Gravity = playerdata.Gravity
+			if isrunning == false then
+				isrunning = true
+				local runanimId = char.Animate.run.RunAnim.AnimationId 
+				local walkanimID = char.Animate.walk.WalkAnim.AnimationId
+				
+				char.Animate.walk.WalkAnim.AnimationId = runanimId
+				char.Animate.run.RunAnim.AnimationId = walkanimID
+				
+				char.Animate.ResetAnimations:Fire("walk")
+				
+				hum.WalkSpeed = playerdata.Runspeed
+				workspace.Gravity = playerdata.Gravity
+			end
 		end,
 		["RunStop"] = function()
 			--RunTrack:Stop()
-			
-			local walkanimID = char.Animate.run.RunAnim.AnimationId 
-			local runanimID = char.Animate.walk.WalkAnim.AnimationId
+			if isrunning == true then
+				isrunning = false
+				local walkanimID = char.Animate.run.RunAnim.AnimationId 
+				local runanimID = char.Animate.walk.WalkAnim.AnimationId
 
-			char.Animate.walk.WalkAnim.AnimationId = walkanimID
-			char.Animate.run.RunAnim.AnimationId = runanimID
-			
-			char.Animate.ResetAnimations:Fire("walk")
-			
-			hum.WalkSpeed = playerdata.Walkspeed
+				char.Animate.walk.WalkAnim.AnimationId = walkanimID
+				char.Animate.run.RunAnim.AnimationId = runanimID
+				
+				char.Animate.ResetAnimations:Fire("walk")
+				
+				hum.WalkSpeed = playerdata.Walkspeed
+			end
 		end,
 		["Check"] = function(str)
 			if str and hum:GetState() == Enum.HumanoidStateType.Running then
@@ -345,6 +381,11 @@ local ActionFunctions = {
 				
 				GrappleData.HighlightedPoint = nil
 				GrappleHighlight.Parent = game.ReplicatedStorage
+				
+				local sfx = game.ReplicatedStorage.woosh:Clone()
+				sfx.Parent = hrp
+				sfx:Play()
+				game.Debris:AddItem(sfx,2)
 				
 				wait(.5)
 				

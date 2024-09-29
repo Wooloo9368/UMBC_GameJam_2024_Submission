@@ -4,6 +4,10 @@ local char = plr.Character
 local hrp = char:WaitForChild("HumanoidRootPart")
 local hum = char:WaitForChild("Humanoid")
 
+wait(1)
+local playerDataContainer = require(game.ReplicatedStorage.playerStats)
+local playerdata = playerDataContainer[plr]
+
 local mouse = plr:GetMouse()
 
 camera.CameraType = Enum.CameraType.Scriptable
@@ -11,7 +15,7 @@ camera.CameraSubject = hum
 camera.CFrame += hrp.Position + Vector3.new(0,15,0)
 
 local uis = game:GetService('UserInputService')
-uis.MouseBehavior = Enum.MouseBehavior.LockCenter
+uis.MouseBehavior = Enum.MouseBehavior.Default
 
 local orientationx = 0
 local orientationy = 0
@@ -43,9 +47,37 @@ local function GhettoTween()
 	return startp + (math.min(math.pow(x,3),1) * difference)
 end
 
+local inTitle = true
+
+plr.PlayerGui.TitleScreen.Enabled = true
+
+plr.PlayerGui.TitleScreen.Button.MouseButton1Click:Connect(function()
+	game.TweenService:Create(plr.PlayerGui.TitleScreen.Frame,TweenInfo.new(.5),{["BackgroundTransparency"] = 0}):Play()
+	
+	wait(.6)
+	game.TweenService:Create(plr.PlayerGui.TitleScreen.Frame,TweenInfo.new(.5),{["BackgroundTransparency"] = 1}):Play()
+	
+	plr.PlayerGui.TitleScreen.Button.Visible = false
+	plr.PlayerGui.TitleScreen.TextTitle.Visible = false
+	inTitle = false
+	
+	wait(.5)
+	
+	
+	plr.PlayerGui.TitleScreen.Enabled = false
+	uis.MouseBehavior = Enum.MouseBehavior.LockCenter
+end)
+
 game["Run Service"].RenderStepped:Connect(function()
 	
 	--local EndPosition = hrp.Position + Vector3.new(0,3,0)
+	
+	if inTitle then
+		
+		camera.CFrame = game.Workspace.TitleCamera.CFrame
+		
+		return
+	end
 	
 	local CameraCenteredPosition = (hrp.Position + Vector3.new(0,3,0))
 	
@@ -76,17 +108,19 @@ game["Run Service"].RenderStepped:Connect(function()
 	camera.FieldOfView = fov
 	
 	char.Trail.Transparency = NumberSequence.new(math.clamp(1 - (speed-16)/100,0,1),1)
+	
+	workspace.Gravity = playerdata.Gravity
 end)
 
 uis.InputChanged:Connect(function(input,gpe)
-	if input.UserInputType == Enum.UserInputType.MouseMovement then
+	if input.UserInputType == Enum.UserInputType.MouseMovement and inTitle == false then
 		orientationx += input.Delta.X * uis.MouseDeltaSensitivity
 		orientationy = math.clamp(orientationy + input.Delta.Y * uis.MouseDeltaSensitivity,-70,70)
 	end
 end)
 
 uis.InputBegan:Connect(function(input,gpe)
-	if input.UserInputType == Enum.UserInputType.MouseMovement then
+	if input.UserInputType == Enum.UserInputType.MouseMovement and inTitle == false then
 		uis.MouseBehavior = Enum.MouseBehavior.LockCenter
 	end
 end)
