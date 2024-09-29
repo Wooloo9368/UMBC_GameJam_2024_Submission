@@ -92,6 +92,8 @@ local animNames = {
 }
 local dances = {"dance1", "dance2", "dance3"}
 
+local footsteps = require(game.ReplicatedStorage.FootstepModule)
+
 -- Existance in this list signifies that it is an emote, the value indicates if it is a looping emote
 local emoteNames = { wave = false, point = false, dance1 = true, dance2 = true, dance3 = true, laugh = false, cheer = false}
 
@@ -267,12 +269,22 @@ function playAnimation(animName, transitionTime, humanoid, override)
 		currentAnim = animName
 		currentAnimInstance = anim
 		
-		if animName == 'walk' and anim.AnimationId == "rbxassetid://76863047388314" then
+		if animName == 'walk' then
 			if Connection then
 				Connection:Disconnect()
 			end
 			Connection = currentAnimTrack:GetMarkerReachedSignal("Step"):Connect(function(foot)
-				game.Players.LocalPlayer.Character[foot.." Leg"].StepAttachment.SmokePuff:Emit(9)
+				if anim.AnimationId == "rbxassetid://76863047388314" then
+					game.Players.LocalPlayer.Character[foot.." Leg"].StepAttachment.SmokePuff:Emit(9) 
+				end
+				
+				local soundList = footsteps.MaterialMap[humanoid.FloorMaterial]
+				local sound = Instance.new("Sound")
+				sound.Volume = .1
+				sound.SoundId = footsteps:GetRandomSound(soundList)
+				sound.Parent = humanoid.Parent.HumanoidRootPart
+				sound:Play()
+				game.Debris:AddItem(sound,.5)
 			end)
 		elseif Connection then
 			Connection:Disconnect()

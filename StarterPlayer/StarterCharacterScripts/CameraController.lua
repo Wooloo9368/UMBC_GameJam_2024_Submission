@@ -74,6 +74,8 @@ game["Run Service"].RenderStepped:Connect(function()
 	local fov = math.clamp(70 + ((speed - 16) / 10),70,120)
 	
 	camera.FieldOfView = fov
+	
+	char.Trail.Transparency = NumberSequence.new(math.clamp(1 - (speed-16)/100,0,1),1)
 end)
 
 uis.InputChanged:Connect(function(input,gpe)

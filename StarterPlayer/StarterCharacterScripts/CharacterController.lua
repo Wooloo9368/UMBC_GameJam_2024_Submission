@@ -57,15 +57,15 @@ local WallRunData = {
 	};
 	["CurrentWall"] = nil;
 	["CurrentDirection"] = nil;
-	["Speed"] = nil
+	["Speed"] = nil;
+	["left"] = hum:LoadAnimation(script.LeftWallrun);
+	["right"] = hum:LoadAnimation(script.RightWallrun);
 }
 
 local GrappleData = {
 	["Activated"] = false;
 	["HighlightedPoint"] = nil;
-	["StartxRad"] = 0;
-	["StartyRad"] = 0;
-	["StartzRad"] = 0;
+	["Animation"] = hum:LoadAnimation(script.Grapple)
 }
 
 local GrappleHighlight = game.ReplicatedStorage.GrappleHighlight
@@ -139,7 +139,19 @@ local ActionFunctions = {
 			bv.Velocity = ForceCrossVector * hum.WalkSpeed
 			bv.Parent = hrp
 			
-			bg.CFrame = CFrame.new(Vector3.new(),ForceCrossVector)
+			local tilt = 0
+			
+			if data and data.direction == "left" then
+				WallRunData.left:Play()
+				tilt = -15
+			elseif data then
+				WallRunData.right:Play()
+				tilt = 15
+			end
+			
+			plr:SetAttribute("CameraTilt",tilt)
+			
+			bg.CFrame = CFrame.new(Vector3.new(),ForceCrossVector) * CFrame.Angles(0,0,tilt)
 			bg.Parent = hrp
 			
 			hum.AutoRotate = false
@@ -150,6 +162,9 @@ local ActionFunctions = {
 			WallRunData.Speed = hum.WalkSpeed
 		end,
 		["Stop"] = function()
+			WallRunData.right:Stop()
+			WallRunData.left:Stop()
+			
 			WallRunData.Exclude[WallRunData.CurrentWall] = tick()
 			
 			bv.Parent = nil
@@ -186,7 +201,7 @@ local ActionFunctions = {
 				plr:SetAttribute("CameraTilt",15)
 			end
 			
-			bv.Velocity = bv.Velocity.Magnitude * (bv.Velocity.Unit + Vector3.new(0,-.01,0)).Unit
+			bv.Velocity = bv.Velocity.Magnitude * (bv.Velocity.Unit + Vector3.new(0,-.01 * playerdata.Gravity/196,0)).Unit
 			
 			WallRunData.Speed = bv.Velocity.Magnitude
 			
@@ -216,6 +231,9 @@ local ActionFunctions = {
 			nbv.P = 25000
 			nbv.Velocity = Vector3.new(0,hum.JumpPower,0) -- Modifiy to characters Jump Power
 			game.Debris:AddItem(nbv,.05)
+			
+			local animation = hum:LoadAnimation(script.DoubleJumpAnimation)
+			animation:Play()
 			
 		end,
 		["Check"] = function()
@@ -321,7 +339,7 @@ local ActionFunctions = {
 				bv.P = 25000
 				bv.Parent = char.HumanoidRootPart
 				
-				
+				GrappleData.Animation:Play()
 				
 				GrappleData.Activated = true 
 				
@@ -329,6 +347,8 @@ local ActionFunctions = {
 				GrappleHighlight.Parent = game.ReplicatedStorage
 				
 				wait(.5)
+				
+				GrappleData.Animation:Stop()
 				
 				bv.Parent = nil
 				
