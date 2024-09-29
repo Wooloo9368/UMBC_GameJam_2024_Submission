@@ -1,19 +1,23 @@
 local plr = game.Players.LocalPlayer
+plr:SetAttribute("CameraTilt",0)
 local char = plr.Character
 local hrp = char:WaitForChild("HumanoidRootPart")
 local hum = char:WaitForChild("Humanoid")
 
+local camera = game.Workspace.CurrentCamera
+
+local mouse = plr:GetMouse()
+
 local playerDataContainer = require(game.ReplicatedStorage.playerStats)
 playerDataContainer:Add(plr)
 local playerdata = playerDataContainer[plr]
+print(playerdata)
 
 local RunTrack = hum:LoadAnimation(script.RunAnimation)
 
 local activeInputs = {}
 
 local currentAction = "None"
-
-local IsRunning = false
 
 local uis = game:GetService("UserInputService")
 
@@ -55,6 +59,16 @@ local WallRunData = {
 	["CurrentDirection"] = nil;
 	["Speed"] = nil
 }
+
+local GrappleData = {
+	["Activated"] = false;
+	["HighlightedPoint"] = nil;
+	["StartxRad"] = 0;
+	["StartyRad"] = 0;
+	["StartzRad"] = 0;
+}
+
+local GrappleHighlight = game.ReplicatedStorage.GrappleHighlight
 
 local wallRunCheck = function()
 	if char.Humanoid:GetState() == Enum.HumanoidStateType.Freefall then
@@ -102,6 +116,19 @@ local wallRunCheck = function()
 	return false
 end
 
+function CalculateGrappleForceVector(GrappleVector,MovementVector)
+	local ForceCrossVector = GrappleVector:Cross(MovementVector)
+	return ForceCrossVector
+	
+end
+
+local part = Instance.new("Part")
+part.Material = Enum.Material.Neon
+part.Anchored = true
+part.CanCollide = false
+part.Parent = workspace
+part.Size = Vector3.new(.1,.1,5)
+
 local ActionFunctions = {
 	["WallRun"] = {
 		["Data"] = WallRunData;
@@ -127,6 +154,8 @@ local ActionFunctions = {
 			bg.Parent = nil
 			
 			hum.AutoRotate = true
+			
+			plr:SetAttribute("CameraTilt",0)
 		end,
 		["OnStep"] = function()
 			
@@ -139,6 +168,12 @@ local ActionFunctions = {
 				local ForceCrossVector = CalculateInitalWallRunDirection(hrp.CFrame.LookVector,data.cast.Normal)
 				bv.Velocity = bv.Velocity.Magnitude * ForceCrossVector
 				bg.CFrame = CFrame.new(Vector3.new(),ForceCrossVector)
+			end
+			
+			if data.direction == "left" then
+				plr:SetAttribute("CameraTilt",15)
+			else
+				plr:SetAttribute("CameraTilt",-15)
 			end
 			
 			bv.Velocity = bv.Velocity.Magnitude * (bv.Velocity.Unit + Vector3.new(0,-.01,0)).Unit
@@ -167,6 +202,7 @@ local ActionFunctions = {
 			nbv.P = 25000
 			nbv.Velocity = Vector3.new(0,hum.JumpPower,0) -- Modifiy to characters Jump Power
 			game.Debris:AddItem(nbv,.05)
+			
 		end,
 		["Check"] = function()
 			if char.Humanoid:GetState() == Enum.HumanoidStateType.Freefall and DoubleJumpData.Jumps < playerdata.Jumps then
@@ -185,13 +221,86 @@ local ActionFunctions = {
 			RunTrack:Stop()
 			hum.WalkSpeed = playerdata.Walkspeed
 		end,
-		["Check"] = function(keyString)
-			if keyString and hum:GetState() == Enum.HumanoidStateType.Running and activeInputs[keyString] and tick() - activeInputs[keyString] < .2 then
+		["Check"] = function(str)
+			if str and hum:GetState() == Enum.HumanoidStateType.Running then
 				return true
 			end
 			return false
 		end
-		
+	};
+	["Grapple"] = {
+		["Data"] = GrappleData;
+		["Check"] = function()
+			
+		end,
+		["OnStepRegardless"] = function()
+			if GrappleData.Activated == false then
+				
+				local LowestDistance = 60
+				local GrapplePoint = nil
+				
+				for i , v in pairs(game.Workspace.GrapplePoints:GetChildren()) do
+					local position , onscreen = camera:WorldToScreenPoint(v.Position)
+					if onscreen then
+						local mousePosition = Vector2.new(mouse.X,mouse.Y)
+						local screenPosition = Vector2.new(position.X,position.Y)
+						
+						local distance = (screenPosition - mousePosition).Magnitude
+						if distance < LowestDistance then
+							GrapplePoint = v
+							LowestDistance = distance
+						end
+					end
+				end
+				
+				if GrapplePoint then
+					GrappleData.HighlightedPoint = GrapplePoint
+					GrappleHighlight.Parent = GrapplePoint
+				else
+					GrappleData.HighlightedPoint = nil
+					GrappleHighlight.Parent = game.ReplicatedStorage
+				end
+			else
+				
+			end
+		end,
+		["MouseClick"] = function()
+			if GrappleData.HighlightedPoint then
+				
+				
+				
+				local GrapplePosition = GrappleData.HighlightedPoint.Position
+				
+				local GrappleDirection = (GrapplePosition - hrp.Position).Unit
+				local GrappleDistance = (GrapplePosition - hrp.Position).Magnitude
+				
+				bv.Velocity = GrappleDirection * 2 * GrappleDistance
+				bv.MaxForce = Vector3.new(25000,25000,25000)
+				bv.P = 25000
+				bv.Parent = char.HumanoidRootPart
+				
+				
+				
+				GrappleData.Activated = true 
+				
+				GrappleData.HighlightedPoint = nil
+				GrappleHighlight.Parent = game.ReplicatedStorage
+				
+				wait(.5)
+				
+				bv.Parent = nil
+				
+				local bv = Instance.new("BodyVelocity")
+				bv.Velocity = Vector3.new(0,50,0)
+				bv.MaxForce = Vector3.new(0,25000,0)
+				bv.P = 25000
+				bv.Parent = char.HumanoidRootPart
+				
+				game.Debris:AddItem(bv,.1)
+				
+				GrappleData.Activated = false 
+			end
+		end,
 	}
 }
 
@@ -222,10 +331,17 @@ uis.InputBegan:Connect(function(input,gpe)
 				ActionFunctions[Action].Start(extra)
 			end
 		end
-	elseif input.KeyCode == Enum.KeyCode.W then
-		print(keyString)
-		if ActionFunctions.Run.Check(keyString) then
+	elseif input.KeyCode == Enum.KeyCode.LeftShift then
+		if ActionFunctions.Run.Check("") then
 			ActionFunctions.Run.Start()
+		end
+	elseif input.KeyCode == Enum.KeyCode.E then
+		uis.MouseBehavior = Enum.MouseBehavior.Default
+	elseif input.UserInputType == Enum.UserInputType.MouseButton1 then
+		for action , tab in pairs(ActionFunctions) do
+			if tab.MouseClick then
+				tab.MouseClick()
+			end
 		end
 	end
 	
@@ -245,8 +361,10 @@ uis.InputEnded:Connect(function(input,gpe)
 		
 		bv.Parent = nil
 		currentAction = "None"
-	elseif input.KeyCode == Enum.KeyCode.W then
+	elseif input.KeyCode == Enum.KeyCode.LeftShift then
 		ActionFunctions.Run.RunStop()
+	elseif input.KeyCode == Enum.KeyCode.E then
+		uis.MouseBehavior = Enum.MouseBehavior.LockCenter
 	end
 end)
 
@@ -254,6 +372,11 @@ game["Run Service"].RenderStepped:Connect(function()
 	if ActionFunctions[currentAction] then
 		if ActionFunctions[currentAction].OnStep then
 			ActionFunctions[currentAction].OnStep()
+		end
+	end
+	for action , tab in pairs(ActionFunctions) do
+		if tab.OnStepRegardless then
+			tab.OnStepRegardless()
 		end
 	end
 end)
