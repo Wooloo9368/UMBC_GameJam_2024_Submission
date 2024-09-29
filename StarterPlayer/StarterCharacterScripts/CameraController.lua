@@ -17,13 +17,31 @@ local orientationx = 0
 local orientationy = 0
 
 local distance = 10
-local maxdistance = 20
+local maxdistance = 15
 local mindistance = 5
 
 local castParams = RaycastParams.new()
 castParams.FilterType = Enum.RaycastFilterType.Exclude
 castParams.RespectCanCollide = true
 castParams.FilterDescendantsInstances = {char}
+
+local GhettoTweenData = {
+	["Startp"] = 0;
+	["Endp"] = 0;
+	["Duration"] = .5;
+	["StartTick"] = 0;
+}
+
+local function GhettoTween()
+	local startp = GhettoTweenData.Startp
+	local endp = GhettoTweenData.Endp
+	local duration = GhettoTweenData.Duration
+	local startTick = GhettoTweenData.StartTick
+	
+	local difference = endp-startp
+	local x = (tick() - startTick)/duration
+	return startp + (math.min(math.pow(x,2),1) * difference)
+end
 
 game["Run Service"].RenderStepped:Connect(function()
 	
@@ -47,10 +65,15 @@ game["Run Service"].RenderStepped:Connect(function()
 		local distanceBetweenPoints = (cast.Position - CameraCenteredPosition).Magnitude
 		local direction = (CameraCenteredPosition - cast.Position).Unit
 		
-		RealCFrame = CFrame.new((hrp.Position + Vector3.new(0,3,0)) + (-direction * (distanceBetweenPoints - .2)),hrp.Position + Vector3.new(0,3,0))
+		RealCFrame = CFrame.new((hrp.Position + Vector3.new(0,3,0)) + (-direction * (distanceBetweenPoints - .2)),hrp.Position + Vector3.new(0,3,0)) * CFrame.Angles(0,0,math.rad(GhettoTween()))
 	end
 	
-	camera.CFrame = RealCFrame
+	camera.CFrame = RealCFrame * CFrame.Angles(0,0,math.rad(GhettoTween()))
+	
+	local speed = hrp.Velocity.Magnitude
+	local fov = math.clamp(70 + ((speed - 16) / 10),70,120)
+	
+	camera.FieldOfView = fov
 end)
 
 uis.InputChanged:Connect(function(input,gpe)
@@ -60,15 +83,22 @@ uis.InputChanged:Connect(function(input,gpe)
 	end
 end)
 
-
---[[uis.InputBegan:Connect(function(input,gpe)
-	
-end)]]
-
 mouse.WheelForward:Connect(function()
 	distance = math.max(mindistance , distance - 2)
 end)
 
 mouse.WheelBackward:Connect(function()
 	distance = math.min(maxdistance , distance + 2)
+end)
+
+plr:SetAttribute("CameraTilt",0)
+
+plr:GetAttributeChangedSignal("CameraTilt"):Connect(function()
+	GhettoTweenData = {
+		["Startp"] = GhettoTween();
+		["Endp"] = plr:GetAttribute('CameraTilt');
+		["Duration"] = .5;
+		["StartTick"] = tick();
+	}
+	print(GhettoTweenData)
 end)

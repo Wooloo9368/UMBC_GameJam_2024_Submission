@@ -1,3 +1,4 @@
+wait(1)
 local plr = game.Players.LocalPlayer
 plr:SetAttribute("CameraTilt",0)
 local char = plr.Character
@@ -9,7 +10,6 @@ local camera = game.Workspace.CurrentCamera
 local mouse = plr:GetMouse()
 
 local playerDataContainer = require(game.ReplicatedStorage.playerStats)
-playerDataContainer:Add(plr)
 local playerdata = playerDataContainer[plr]
 print(playerdata)
 
@@ -180,9 +180,9 @@ local ActionFunctions = {
 			end
 			
 			if data and data.direction == "left" then
-				plr:SetAttribute("CameraTilt",15)
-			elseif data then
 				plr:SetAttribute("CameraTilt",-15)
+			elseif data then
+				plr:SetAttribute("CameraTilt",15)
 			end
 			
 			bv.Velocity = bv.Velocity.Magnitude * (bv.Velocity.Unit + Vector3.new(0,-.01,0)).Unit
@@ -229,6 +229,7 @@ local ActionFunctions = {
 			print(playerdata)
 			RunTrack:Play()
 			hum.WalkSpeed = playerdata.Runspeed
+			workspace.Gravity = playerdata.Gravity
 		end,
 		["RunStop"] = function()
 			RunTrack:Stop()
@@ -247,14 +248,15 @@ local ActionFunctions = {
 			
 		end,
 		["OnStepRegardless"] = function()
-			if GrappleData.Activated == false then
+			if GrappleData.Activated == false and playerdata.CanGrapple == true then
 				
 				local LowestDistance = 60
 				local GrapplePoint = nil
 				
 				for i , v in pairs(game.Workspace.GrapplePoints:GetChildren()) do
 					local position , onscreen = camera:WorldToScreenPoint(v.Position)
-					if onscreen then
+					local cast = workspace:Raycast(hrp.Position,(v.Position - hrp.Position).Unit * (v.Position - hrp.Position).Magnitude,wallCheckParams)
+					if onscreen and cast == nil then
 						local mousePosition = Vector2.new(mouse.X,mouse.Y)
 						local screenPosition = Vector2.new(position.X,position.Y)
 						
@@ -278,7 +280,7 @@ local ActionFunctions = {
 			end
 		end,
 		["MouseClick"] = function()
-			if GrappleData.HighlightedPoint then
+			if GrappleData.HighlightedPoint and playerdata.CanGrapple == true then
 				
 				
 				
@@ -286,6 +288,14 @@ local ActionFunctions = {
 				
 				local GrappleDirection = (GrapplePosition - hrp.Position).Unit
 				local GrappleDistance = (GrapplePosition - hrp.Position).Magnitude
+				
+				local cast = workspace:Raycast(hrp.Position,GrappleDirection * GrappleDistance,wallCheckParams)
+				
+				if cast ~= nil then
+					if cast.Instance ~= GrappleData.HighlightedPoint then
+						return
+					end
+				end
 				
 				bv.Velocity = GrappleDirection * 2 * GrappleDistance
 				bv.MaxForce = Vector3.new(25000,25000,25000)
@@ -334,8 +344,6 @@ uis.InputBegan:Connect(function(input,gpe)
 	if input.KeyCode == Enum.KeyCode.Space and currentAction == "None" then
 		
 		local Action, extra = GetAction()
-		
-		print(Action)
 		
 		currentAction = Action
 		
