@@ -1,5 +1,6 @@
 game.StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Backpack,false)
 game.StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Health,false)
+game.StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList,false)
 wait(1)
 local plr = game.Players.LocalPlayer
 plr:SetAttribute("CameraTilt",0)
@@ -187,6 +188,11 @@ local ActionFunctions = {
 			WallRunData.CurrentWall = data.cast.Instance
 			WallRunData.CurrentDirection = data.direction
 			WallRunData.Speed = hum.WalkSpeed
+			
+			local sfx = game.ReplicatedStorage.WallrunStart:Clone()
+			sfx.Parent = hrp
+			sfx:Play()
+			game.Debris:AddItem(sfx,.5)
 		end,
 		["Stop"] = function()
 			WallRunData.right:Stop()
@@ -239,15 +245,36 @@ local ActionFunctions = {
 			
 			WallRunData.Speed = bv.Velocity.Magnitude
 			
+			print(result)
+			
 			if result == false or bv.Velocity.Unit.Y < -.65 or hum:GetState() == Enum.HumanoidStateType.Running then
-				WallRunData.Exclude[WallRunData.CurrentWall] = tick()
+				currentAction = "None"
 				
+				WallRunData.right:Stop()
+				WallRunData.left:Stop()
+
+				WallRunData.Exclude[WallRunData.CurrentWall] = tick()
+
 				bv.Parent = nil
 				bg.Parent = nil
 
 				hum.AutoRotate = true
-				
+
 				plr:SetAttribute("CameraTilt",0)
+
+				local bv = Instance.new("BodyVelocity")
+				bv.Velocity = (WallRunData.CurrentCast.Normal + hrp.CFrame.LookVector).Unit * 40
+				bv.Parent = hrp
+				bv.MaxForce = Vector3.new(25000,25000,25000)
+				bv.P = 25000
+				game.Debris:AddItem(bv,.1)
+
+				local sfx = game.ReplicatedStorage.WallrunDetachsfx:Clone()
+				sfx.Parent = hrp
+				sfx:Play()
+				game.Debris:AddItem(sfx,.5)
+
+				WallRunData.deach:Play()
 			end
 		end,
 		["Check"] = wallRunCheck
@@ -268,6 +295,11 @@ local ActionFunctions = {
 			
 			local animation = hum:LoadAnimation(script.DoubleJumpAnimation)
 			animation:Play()
+			
+			local sfx = game.ReplicatedStorage.WallrunDetachsfx:Clone()
+			sfx.Parent = hrp
+			sfx:Play()
+			game.Debris:AddItem(sfx,.5)
 			
 		end,
 		["Check"] = function()
@@ -326,12 +358,14 @@ local ActionFunctions = {
 			if GrappleData.Activated == false and playerdata.CanGrapple == true then
 				
 				local LowestDistance = 60
+				local Distance3dMax = 100
 				local GrapplePoint = nil
 				
 				for i , v in pairs(game.Workspace.GrapplePoints:GetChildren()) do
 					local position , onscreen = camera:WorldToScreenPoint(v.Position)
 					local cast = workspace:Raycast(hrp.Position,(v.Position - hrp.Position).Unit * (v.Position - hrp.Position).Magnitude,wallCheckParams)
-					if onscreen and cast == nil then
+					local d3d = (hrp.Position - v.Position).Magnitude
+					if onscreen and cast == nil and d3d <= Distance3dMax then
 						local mousePosition = Vector2.new(mouse.X,mouse.Y)
 						local screenPosition = Vector2.new(position.X,position.Y)
 						
@@ -478,7 +512,9 @@ uis.InputEnded:Connect(function(input,gpe)
 	end
 end)
 
-game["Run Service"].RenderStepped:Connect(function()
+local lastFaceChange = tick()
+
+game["Run Service"].RenderStepped:Connect(function(delta)
 	if ActionFunctions[currentAction] then
 		if ActionFunctions[currentAction].OnStep then
 			ActionFunctions[currentAction].OnStep()
@@ -491,7 +527,13 @@ game["Run Service"].RenderStepped:Connect(function()
 	end
 	
 	-- facial animations
-	
+	if tick() - lastFaceChange > 1 then
+		lastFaceChange = tick()
+		
+		if isrunning then
+			
+		end
+	end
 end)
 
 char.Humanoid.StateChanged:Connect(function(oldState,newState)

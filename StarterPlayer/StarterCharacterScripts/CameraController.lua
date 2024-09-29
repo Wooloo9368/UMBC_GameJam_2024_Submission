@@ -4,6 +4,8 @@ local char = plr.Character
 local hrp = char:WaitForChild("HumanoidRootPart")
 local hum = char:WaitForChild("Humanoid")
 
+game.Workspace["Day Ambience"]:Play()
+
 wait(1)
 local playerDataContainer = require(game.ReplicatedStorage.playerStats)
 local playerdata = playerDataContainer[plr]
@@ -54,7 +56,11 @@ plr.PlayerGui.TitleScreen.Enabled = true
 plr.PlayerGui.TitleScreen.Button.MouseButton1Click:Connect(function()
 	game.TweenService:Create(plr.PlayerGui.TitleScreen.Frame,TweenInfo.new(.5),{["BackgroundTransparency"] = 0}):Play()
 	
-	wait(.6)
+	wait(.5)
+	
+	game.TweenService:Create(plr.PlayerGui.TitleScreen.ImageLabel,TweenInfo.new(.2),{["ImageTransparency"] = 1}):Play()
+	
+	wait(.1)
 	game.TweenService:Create(plr.PlayerGui.TitleScreen.Frame,TweenInfo.new(.5),{["BackgroundTransparency"] = 1}):Play()
 	
 	plr.PlayerGui.TitleScreen.Button.Visible = false
