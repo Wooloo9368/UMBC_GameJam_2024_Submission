@@ -173,6 +173,7 @@ local ActionFunctions = {
 			if data and data.cast.Instance ~= WallRunData.CurrentWall then
 				WallRunData.Exclude[WallRunData.CurrentWall] = tick()
 				WallRunData.CurrentWall = data.cast.Instance
+				WallRunData.CurrentCast = data.cast
 				
 				local ForceCrossVector = CalculateInitalWallRunDirection(hrp.CFrame.LookVector,data.cast.Normal)
 				bv.Velocity = bv.Velocity.Magnitude * ForceCrossVector
@@ -227,12 +228,30 @@ local ActionFunctions = {
 	["Run"] = {
 		["Start"] = function()
 			print(playerdata)
-			RunTrack:Play()
+			--RunTrack:Play()
+			
+			local runanimId = char.Animate.run.RunAnim.AnimationId 
+			local walkanimID = char.Animate.walk.WalkAnim.AnimationId
+			
+			char.Animate.walk.WalkAnim.AnimationId = runanimId
+			char.Animate.run.RunAnim.AnimationId = walkanimID
+			
+			char.Animate.ResetAnimations:Fire("walk")
+			
 			hum.WalkSpeed = playerdata.Runspeed
 			workspace.Gravity = playerdata.Gravity
 		end,
 		["RunStop"] = function()
-			RunTrack:Stop()
+			--RunTrack:Stop()
+			
+			local walkanimID = char.Animate.run.RunAnim.AnimationId 
+			local runanimID = char.Animate.walk.WalkAnim.AnimationId
+
+			char.Animate.walk.WalkAnim.AnimationId = walkanimID
+			char.Animate.run.RunAnim.AnimationId = runanimID
+			
+			char.Animate.ResetAnimations:Fire("walk")
+			
 			hum.WalkSpeed = playerdata.Walkspeed
 		end,
 		["Check"] = function(str)
@@ -336,6 +355,9 @@ function GetAction()
 	end
 end
 
+local mouse = plr:GetMouse()
+mouse.Icon = "http://www.roblox.com/asset?id=14108612823"
+
 uis.InputBegan:Connect(function(input,gpe)
 	if gpe then return end
 	
@@ -400,6 +422,9 @@ game["Run Service"].RenderStepped:Connect(function()
 			tab.OnStepRegardless()
 		end
 	end
+	
+	-- facial animations
+	
 end)
 
 char.Humanoid.StateChanged:Connect(function(oldState,newState)

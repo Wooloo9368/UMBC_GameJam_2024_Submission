@@ -40,7 +40,7 @@ local function GhettoTween()
 	
 	local difference = endp-startp
 	local x = (tick() - startTick)/duration
-	return startp + (math.min(math.pow(x,2),1) * difference)
+	return startp + (math.min(math.pow(x,3),1) * difference)
 end
 
 game["Run Service"].RenderStepped:Connect(function()
@@ -83,6 +83,12 @@ uis.InputChanged:Connect(function(input,gpe)
 	end
 end)
 
+uis.InputBegan:Connect(function(input,gpe)
+	if input.UserInputType == Enum.UserInputType.MouseMovement then
+		uis.MouseBehavior = Enum.MouseBehavior.LockCenter
+	end
+end)
+
 mouse.WheelForward:Connect(function()
 	distance = math.max(mindistance , distance - 2)
 end)
@@ -97,8 +103,7 @@ plr:GetAttributeChangedSignal("CameraTilt"):Connect(function()
 	GhettoTweenData = {
 		["Startp"] = GhettoTween();
 		["Endp"] = plr:GetAttribute('CameraTilt');
-		["Duration"] = .5;
+		["Duration"] = .3;
 		["StartTick"] = tick();
 	}
-	print(GhettoTweenData)
 end)
