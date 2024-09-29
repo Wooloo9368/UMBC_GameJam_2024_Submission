@@ -267,12 +267,12 @@ function playAnimation(animName, transitionTime, humanoid, override)
 		currentAnim = animName
 		currentAnimInstance = anim
 		
-		if animName == 'walk' then
+		if animName == 'walk' and anim.AnimationId == "rbxassetid://76863047388314" then
 			if Connection then
 				Connection:Disconnect()
 			end
-			Connection = currentAnimTrack:GetMarkerReachedSignal("Step"):Connect(function()
-				print("Step")
+			Connection = currentAnimTrack:GetMarkerReachedSignal("Step"):Connect(function(foot)
+				game.Players.LocalPlayer.Character[foot.." Leg"].StepAttachment.SmokePuff:Emit(9)
 			end)
 		elseif Connection then
 			Connection:Disconnect()

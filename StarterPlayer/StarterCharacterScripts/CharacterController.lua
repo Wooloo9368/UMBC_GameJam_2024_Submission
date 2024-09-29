@@ -396,6 +396,10 @@ uis.InputEnded:Connect(function(input,gpe)
 	
 	if input.KeyCode == Enum.KeyCode.Space then
 		
+		if hum:GetState() == Enum.HumanoidStateType.Running then
+			hrp.LandAttachment.SmokePuff:Emit(math.random(10,25))
+		end
+		
 		if ActionFunctions[currentAction] then
 			if ActionFunctions[currentAction].Stop then
 				ActionFunctions[currentAction].Stop()
@@ -429,6 +433,7 @@ end)
 
 char.Humanoid.StateChanged:Connect(function(oldState,newState)
 	if newState == Enum.HumanoidStateType.Landed then
+		hrp.LandAttachment.SmokePuff:Emit(math.random(10,25))
 		for Action, dict in pairs(ActionFunctions) do
 			if dict.Landed then
 				dict.Landed()
