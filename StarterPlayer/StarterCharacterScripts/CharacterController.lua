@@ -1,3 +1,5 @@
+game.StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Backpack,false)
+game.StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Health,false)
 wait(1)
 local plr = game.Players.LocalPlayer
 plr:SetAttribute("CameraTilt",0)

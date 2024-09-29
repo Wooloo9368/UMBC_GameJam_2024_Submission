@@ -58,7 +58,7 @@ plr.PlayerGui.TitleScreen.Button.MouseButton1Click:Connect(function()
 	game.TweenService:Create(plr.PlayerGui.TitleScreen.Frame,TweenInfo.new(.5),{["BackgroundTransparency"] = 1}):Play()
 	
 	plr.PlayerGui.TitleScreen.Button.Visible = false
-	plr.PlayerGui.TitleScreen.TextTitle.Visible = false
+	plr.PlayerGui.TitleScreen.ImageLabel.Visible = false
 	inTitle = false
 	
 	wait(.5)
