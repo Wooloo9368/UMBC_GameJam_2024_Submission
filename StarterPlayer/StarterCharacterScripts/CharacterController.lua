@@ -513,6 +513,7 @@ uis.InputEnded:Connect(function(input,gpe)
 end)
 
 local lastFaceChange = tick()
+local lastFace = 2
 
 game["Run Service"].RenderStepped:Connect(function(delta)
 	if ActionFunctions[currentAction] then
@@ -527,11 +528,14 @@ game["Run Service"].RenderStepped:Connect(function(delta)
 	end
 	
 	-- facial animations
-	if tick() - lastFaceChange > 1 then
+	if tick() - lastFaceChange > 0.5 then
 		lastFaceChange = tick()
+		lastFace+=1
 		
 		if isrunning then
-			
+			char.Head.Face.Texture = script.RunningFaces[tostring(lastFace%2)].Texture
+		else
+			char.Head.Face.Texture = script.IdleFace.Decal.Texture
 		end
 	end
 end)
